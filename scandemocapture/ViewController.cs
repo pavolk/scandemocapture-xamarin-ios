@@ -3,6 +3,7 @@
 using UIKit;
 using SocketMobile.Capture;
 using System.Threading.Tasks;
+using static SocketMobile.Capture.ICaptureProperty.Values;
 
 namespace scandemocapture
 {
@@ -202,7 +203,17 @@ namespace scandemocapture
                 else
                     Console.WriteLine("Error retrieving the battery level!");
 
-                // This section causing problems on some scanners
+                var result = await CurrentDevice.SetDecodeActionAsync(false, false, false);
+                if (!result.IsSuccessful()) {
+                  Console.WriteLine("SetDecodeAction() failed with " + result.Result + "!");
+                }
+
+                result = await capture.SetDataConfirmationModeAsync(ConfirmationMode.kApp);
+                if (!result.IsSuccessful()) {
+                  Console.WriteLine("SetDataConfigurationMode() failed with " + result.Result + "!");
+                }
+
+        // This section causing problems on some scanners
 
 #if false
 
@@ -274,7 +285,7 @@ namespace scandemocapture
                 }
                 //DoScannerConnect();
 #endif
-            }
+      }
             else
             {
                 // Maybe a new scanner has arrived, but the simple act of
@@ -325,6 +336,14 @@ namespace scandemocapture
             {
                 scannedDataLabel.Text = Data;
             });
+
+            if (Data.EndsWith('6')) {
+              Console.WriteLine("Bad feedback...");
+              CurrentDevice.SetDataConfirmationAsync(DataConfirmation.kBeepBad, DataConfirmation.kLedRed, DataConfirmation.kRumbleBad);
+            } else {
+              CurrentDevice.SetDataConfirmationAsync(DataConfirmation.kBeepGood, DataConfirmation.kLedGreen, DataConfirmation.kRumbleGood);
+            }
+
             Console.WriteLine("End OnDecodedData()");
         }
 
