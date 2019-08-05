@@ -14,6 +14,7 @@ namespace scandemocapture
 
         CaptureHelper capture = new CaptureHelper();
         CaptureHelperDevice CurrentDevice = null;
+        bool Connected = false;
 
         protected ViewController(IntPtr handle) : base(handle)
         {
@@ -213,6 +214,17 @@ namespace scandemocapture
                   Console.WriteLine("SetDataConfigurationMode() failed with " + result.Result + "!");
                 }
 
+                Connected = true;
+
+                while (Connected) {
+                  resultBattery = await CurrentDevice?.GetBatteryLevelAsync();
+                  if (!SktErrors.SKTSUCCESS(resultBattery?.Result ?? -1)) {
+                    Console.WriteLine("GetBatteryLevel() failed with " + resultBattery.Result + "!");
+                  }
+                  InvokeOnMainThread(() => battLevelLabel.Text = resultBattery.Percentage);
+                  await Task.Delay(TimeSpan.FromSeconds(1));
+                }
+
         // This section causing problems on some scanners
 
 #if false
@@ -320,6 +332,8 @@ namespace scandemocapture
 
         void OnDeviceRemoval(object sender, CaptureHelper.DeviceArgs removedDevice)
         {
+            Connected = false;
+
             Console.WriteLine("Start ScannerDisconnect()");
             CurrentDevice = null; // we don't have a connected scanner
             DoScannerDisconnect(); // do the work
